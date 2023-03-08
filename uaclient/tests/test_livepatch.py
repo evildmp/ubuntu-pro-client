@@ -9,6 +9,7 @@ from uaclient.entitlements.livepatch import LivepatchEntitlement
 from uaclient.files.state_files import LivepatchSupportCacheData
 from uaclient.livepatch import (
     LIVEPATCH_CMD,
+    InternalLivepatchSupportEnum,
     LivepatchPatchFixStatus,
     LivepatchPatchStatus,
     LivepatchStatusStatus,
@@ -305,19 +306,33 @@ class TestOnSupportedKernel:
                 LivepatchStatusStatus(
                     kernel=None, livepatch=None, supported="supported"
                 ),
-                True,
+                InternalLivepatchSupportEnum.SUPPORTED,
             ),
             (
                 LivepatchStatusStatus(
                     kernel=None, livepatch=None, supported="unsupported"
                 ),
-                False,
+                InternalLivepatchSupportEnum.UNSUPPORTED,
+            ),
+            (
+                LivepatchStatusStatus(
+                    kernel=None,
+                    livepatch=None,
+                    supported="kernel-upgrade-required",
+                ),
+                InternalLivepatchSupportEnum.KERNEL_UPGRADE_REQUIRED,
+            ),
+            (
+                LivepatchStatusStatus(
+                    kernel=None, livepatch=None, supported="kernel-end-of-life"
+                ),
+                InternalLivepatchSupportEnum.KERNEL_EOL,
             ),
             (
                 LivepatchStatusStatus(
                     kernel=None, livepatch=None, supported="unknown"
                 ),
-                None,
+                InternalLivepatchSupportEnum.UNKNOWN,
             ),
         ],
     )
@@ -552,9 +567,9 @@ class TestOnSupportedKernel:
             "expected",
         ],
         [
-            # cli result true
+            # cli result supported
             (
-                True,
+                InternalLivepatchSupportEnum.SUPPORTED,
                 None,
                 None,
                 None,
@@ -562,11 +577,11 @@ class TestOnSupportedKernel:
                 None,
                 [],
                 [],
-                True,
+                InternalLivepatchSupportEnum.SUPPORTED,
             ),
-            # cli result false
+            # cli result unsupported
             (
-                False,
+                InternalLivepatchSupportEnum.UNSUPPORTED,
                 None,
                 None,
                 None,
@@ -574,7 +589,43 @@ class TestOnSupportedKernel:
                 None,
                 [],
                 [],
-                False,
+                InternalLivepatchSupportEnum.UNSUPPORTED,
+            ),
+            # cli result upgrade-required
+            (
+                InternalLivepatchSupportEnum.KERNEL_UPGRADE_REQUIRED,
+                None,
+                None,
+                None,
+                None,
+                None,
+                [],
+                [],
+                InternalLivepatchSupportEnum.KERNEL_UPGRADE_REQUIRED,
+            ),
+            # cli result eol
+            (
+                InternalLivepatchSupportEnum.KERNEL_EOL,
+                None,
+                None,
+                None,
+                None,
+                None,
+                [],
+                [],
+                InternalLivepatchSupportEnum.KERNEL_EOL,
+            ),
+            # cli result definite unknown
+            (
+                InternalLivepatchSupportEnum.UNKNOWN,
+                None,
+                None,
+                None,
+                None,
+                None,
+                [],
+                [],
+                InternalLivepatchSupportEnum.UNKNOWN,
             ),
             # insufficient kernel info
             (
@@ -594,7 +645,7 @@ class TestOnSupportedKernel:
                 None,
                 [],
                 [],
-                None,
+                InternalLivepatchSupportEnum.UNKNOWN,
             ),
             # cache result true
             (
@@ -614,7 +665,7 @@ class TestOnSupportedKernel:
                 None,
                 [mock.call("5.6", "generic", "amd64", "xenial")],
                 [],
-                True,
+                InternalLivepatchSupportEnum.SUPPORTED,
             ),
             # cache result false
             (
@@ -634,7 +685,7 @@ class TestOnSupportedKernel:
                 None,
                 [mock.call("5.6", "generic", "amd64", "xenial")],
                 [],
-                False,
+                InternalLivepatchSupportEnum.UNSUPPORTED,
             ),
             # cache result none
             (
@@ -654,7 +705,7 @@ class TestOnSupportedKernel:
                 None,
                 [mock.call("5.6", "generic", "amd64", "xenial")],
                 [],
-                None,
+                InternalLivepatchSupportEnum.UNKNOWN,
             ),
             # api result true
             (
@@ -674,7 +725,7 @@ class TestOnSupportedKernel:
                 True,
                 [mock.call("5.6", "generic", "amd64", "xenial")],
                 [mock.call("5.6", "generic", "amd64", "xenial")],
-                True,
+                InternalLivepatchSupportEnum.SUPPORTED,
             ),
         ],
     )

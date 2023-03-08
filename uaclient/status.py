@@ -266,7 +266,8 @@ def _unattached_status(cfg: UAConfig) -> Dict[str, Any]:
         # that takes into account local information.
         if (
             ent_cls.name == "livepatch"
-            and livepatch.on_supported_kernel() is False
+            and livepatch.on_supported_kernel()
+            == livepatch.InternalLivepatchSupportEnum.UNSUPPORTED
         ):
             lp = ent_cls(cfg)
             descr_override = lp.status_description_override()
@@ -644,7 +645,10 @@ def format_tabular(status: Dict[str, Any]) -> str:
                 content.append("{}: {}".format(key, value))
 
         content.extend(["", messages.UNATTACHED.msg])
-        if livepatch.on_supported_kernel() is False:
+        if (
+            livepatch.on_supported_kernel()
+            == livepatch.InternalLivepatchSupportEnum.UNSUPPORTED
+        ):
             content.extend(
                 ["", messages.LIVEPATCH_KERNEL_NOT_SUPPORTED_UNATTACHED]
             )

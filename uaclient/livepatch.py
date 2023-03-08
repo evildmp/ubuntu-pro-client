@@ -1,4 +1,5 @@
 import datetime
+import enum
 import json
 import logging
 import re
@@ -31,6 +32,15 @@ LIVEPATCH_CMD = "/snap/bin/canonical-livepatch"
 LIVEPATCH_API_V1_KERNELS_SUPPORTED = "/v1/api/kernels/supported"
 
 event = event_logger.get_event_logger()
+
+
+@enum.unique
+class InternalLivepatchSupportEnum(enum.Enum):
+    SUPPORTED = object()
+    KERNEL_UPGRADE_REQUIRED = object()
+    KERNEL_EOL = object()
+    UNSUPPORTED = object()
+    UNKNOWN = object()
 
 
 class LivepatchPatchFixStatus(DataObject):
@@ -193,14 +203,20 @@ class UALivepatchClient(serviceclient.UAServiceClient):
         return bool(result.get("Supported", False))
 
 
-def _on_supported_kernel_cli() -> Optional[bool]:
+def _on_supported_kernel_cli() -> Optional[InternalLivepatchSupportEnum]:
     lp_status = status()
     if lp_status is None:
         return None
     if lp_status.supported == "supported":
-        return True
+        return InternalLivepatchSupportEnum.SUPPORTED
+    if lp_status.supported == "kernel-upgrade-required":
+        return InternalLivepatchSupportEnum.KERNEL_UPGRADE_REQUIRED
+    if lp_status.supported == "kernel-end-of-life":
+        return InternalLivepatchSupportEnum.KERNEL_EOL
     if lp_status.supported == "unsupported":
-        return False
+        return InternalLivepatchSupportEnum.UNSUPPORTED
+    if lp_status.supported == "unknown":
+        return InternalLivepatchSupportEnum.UNKNOWN
     return None
 
 
@@ -269,7 +285,7 @@ def _on_supported_kernel_api(
 
 
 @lru_cache(maxsize=None)
-def on_supported_kernel() -> Optional[bool]:
+def on_supported_kernel() -> InternalLivepatchSupportEnum:
     """
     Checks CLI, local cache, and API in that order for kernel support
     If all checks fail to return an authoritative answer, we return None
@@ -292,7 +308,7 @@ def on_supported_kernel() -> Optional[bool]:
             "unable to determine enough kernel information to "
             "check livepatch support"
         )
-        return None
+        return InternalLivepatchSupportEnum.UNKNOWN
 
     arch = util.standardize_arch_name(system.get_lscpu_arch())
     codename = system.get_platform_info()["series"]
@@ -307,13 +323,24 @@ def on_supported_kernel() -> Optional[bool]:
     )
     if is_cache_valid:
         logging.debug("using livepatch support cache")
-        return cache_says
+        if cache_says is None:
+            return InternalLivepatchSupportEnum.UNKNOWN
+        if cache_says:
+            return InternalLivepatchSupportEnum.SUPPORTED
+        if not cache_says:
+            return InternalLivepatchSupportEnum.UNSUPPORTED
 
     # finally check api
     logging.debug("using livepatch support api")
-    return _on_supported_kernel_api(
+    api_says = _on_supported_kernel_api(
         lp_api_kernel_ver, kernel_info.flavor, arch, codename
     )
+    if api_says is None:
+        return InternalLivepatchSupportEnum.UNKNOWN
+    if api_says:
+        return InternalLivepatchSupportEnum.SUPPORTED
+    if not api_says:
+        return InternalLivepatchSupportEnum.UNSUPPORTED
 
 
 def unconfigure_livepatch_proxy(
