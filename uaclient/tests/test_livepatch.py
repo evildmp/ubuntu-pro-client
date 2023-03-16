@@ -546,7 +546,7 @@ class TestOnSupportedKernel:
             "cli_result",
             "get_kernel_info_result",
             "standardize_arch_name_result",
-            "get_platform_info_result",
+            "get_release_info_result",
             "cache_result",
             "api_result",
             "cache_call_args",
@@ -611,7 +611,7 @@ class TestOnSupportedKernel:
                     patch=None,
                 ),
                 "amd64",
-                {"series": "xenial"},
+                mock.MagicMock(series="xenial"),
                 (True, True),
                 None,
                 [mock.call("5.6", "generic", "amd64", "xenial")],
@@ -631,7 +631,7 @@ class TestOnSupportedKernel:
                     patch=None,
                 ),
                 "amd64",
-                {"series": "xenial"},
+                mock.MagicMock(series="xenial"),
                 (True, False),
                 None,
                 [mock.call("5.6", "generic", "amd64", "xenial")],
@@ -651,7 +651,7 @@ class TestOnSupportedKernel:
                     patch=None,
                 ),
                 "amd64",
-                {"series": "xenial"},
+                mock.MagicMock(series="xenial"),
                 (True, None),
                 None,
                 [mock.call("5.6", "generic", "amd64", "xenial")],
@@ -671,7 +671,7 @@ class TestOnSupportedKernel:
                     patch=None,
                 ),
                 "amd64",
-                {"series": "xenial"},
+                mock.MagicMock(series="xenial"),
                 (False, None),
                 True,
                 [mock.call("5.6", "generic", "amd64", "xenial")],
@@ -682,7 +682,7 @@ class TestOnSupportedKernel:
     )
     @mock.patch(M_PATH + "_on_supported_kernel_api")
     @mock.patch(M_PATH + "_on_supported_kernel_cache")
-    @mock.patch(M_PATH + "system.get_platform_info")
+    @mock.patch(M_PATH + "system.get_release_info")
     @mock.patch(M_PATH + "util.standardize_arch_name")
     @mock.patch(M_PATH + "system.get_lscpu_arch")
     @mock.patch(M_PATH + "system.get_kernel_info")
@@ -693,13 +693,13 @@ class TestOnSupportedKernel:
         m_get_kernel_info,
         m_get_lscpu_arch,
         m_standardize_arch_name,
-        m_get_platform_info,
+        m_get_release_info,
         m_supported_cache,
         m_supported_api,
         cli_result,
         get_kernel_info_result,
         standardize_arch_name_result,
-        get_platform_info_result,
+        get_release_info_result,
         cache_result,
         api_result,
         cache_call_args,
@@ -709,7 +709,7 @@ class TestOnSupportedKernel:
         m_supported_cli.return_value = cli_result
         m_get_kernel_info.return_value = get_kernel_info_result
         m_standardize_arch_name.return_value = standardize_arch_name_result
-        m_get_platform_info.return_value = get_platform_info_result
+        m_get_release_info.return_value = get_release_info_result
         m_supported_cache.return_value = cache_result
         m_supported_api.return_value = api_result
         assert on_supported_kernel.__wrapped__() == expected
