@@ -66,6 +66,7 @@ class TestActionEnable:
         capsys,
         event,
         FakeConfig,
+        tmpdir,
     ):
         """Check that a UID != 0 will receive a message and exit non-zero"""
         args = mock.MagicMock()
@@ -90,7 +91,11 @@ class TestActionEnable:
                     "uaclient.config.UAConfig",
                     return_value=FakeConfig(),
                 ):
-                    main()
+                    with mock.patch(
+                        "uaclient.log.get_user_log_file",
+                        return_value=tmpdir.join("user.log").strpath,
+                    ):
+                        main()
 
         expected_message = messages.NONROOT_USER
         expected = {

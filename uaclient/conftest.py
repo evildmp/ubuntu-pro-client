@@ -57,7 +57,7 @@ def _warn_about_new_version():
 
 
 @pytest.yield_fixture(scope="session", autouse=True)
-def util_we_are_currently_root():
+def util_we_are_currently_root(request):
     """
     A fixture that mocks util.we_are_currently_root for all tests.
     Default to true as most tests need it to be true.

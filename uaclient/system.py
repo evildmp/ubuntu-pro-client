@@ -391,6 +391,10 @@ def write_file(filename: str, content: str, mode: int = 0o644) -> None:
     @param mode: The filesystem mode to set on the file.
     """
     tmpf = None
+    is_file_present = os.path.isfile(filename)
+    if is_file_present:
+        file_stat = pathlib.Path(filename).stat()
+        mode = util.get_file_perm_mode(filename)
     try:
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         tmpf = tempfile.NamedTemporaryFile(
@@ -403,6 +407,8 @@ def write_file(filename: str, content: str, mode: int = 0o644) -> None:
         tmpf.flush()
         tmpf.close()
         os.chmod(tmpf.name, mode)
+        if is_file_present:
+            os.chown(tmpf.name, file_stat.st_uid, file_stat.st_gid)
         os.rename(tmpf.name, filename)
     except Exception as e:
         if tmpf is not None:

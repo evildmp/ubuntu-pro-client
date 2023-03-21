@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import socket
+import stat
 import sys
 import time
 from contextlib import contextmanager
@@ -30,7 +31,6 @@ event = event_logger.get_event_logger()
 
 
 class LogFormatter(logging.Formatter):
-
     FORMATS = {
         logging.ERROR: "ERROR: %(message)s",
         logging.DEBUG: "DEBUG: %(message)s",
@@ -631,3 +631,7 @@ def deduplicate_arches(arches: List[str]) -> List[str]:
 
 def we_are_currently_root() -> bool:
     return os.getuid() == 0
+
+
+def get_file_perm_mode(path: str) -> int:
+    return stat.S_IMODE(os.lstat(path).st_mode)

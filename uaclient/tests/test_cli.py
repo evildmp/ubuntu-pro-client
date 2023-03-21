@@ -147,10 +147,17 @@ class TestCLIParser:
     maxDiff = None
 
     @mock.patch("uaclient.util.we_are_currently_root", return_value=False)
+    @mock.patch("uaclient.log.get_user_log_file")
     @mock.patch("uaclient.cli.entitlements")
     @mock.patch("uaclient.cli.contract")
     def test_help_descr_and_url_is_wrapped_at_eighty_chars(
-        self, m_contract, m_entitlements, m_we_are_currently_root, get_help
+        self,
+        m_contract,
+        m_entitlements,
+        m_get_user_log_file,
+        m_we_are_currently_root,
+        get_help,
+        tmpdir,
     ):
         """Help lines are wrapped at 80 chars"""
 
@@ -160,7 +167,7 @@ class TestCLIParser:
             help_doc_url=BIG_URL,
             is_beta=False,
         )
-
+        m_get_user_log_file.return_value = tmpdir.join("user.log").strpath
         m_entitlements.entitlement_factory.return_value = mocked_ent
         m_contract.get_available_resources.return_value = [{"name": "test"}]
 
@@ -172,12 +179,19 @@ class TestCLIParser:
         assert "\n".join(lines) in out
 
     @mock.patch("uaclient.util.we_are_currently_root", return_value=False)
+    @mock.patch("uaclient.log.get_user_log_file")
     @mock.patch("uaclient.cli.contract")
     def test_help_sourced_dynamically_from_each_entitlement(
-        self, m_contract, m_we_are_currently_root, get_help
+        self,
+        m_contract,
+        m_get_user_log_file,
+        m_we_are_currently_root,
+        get_help,
+        tmpdir,
     ):
         """Help output is sourced from entitlement name and description."""
         m_contract.get_available_resources.return_value = AVAILABLE_RESOURCES
+        m_get_user_log_file.return_value = tmpdir.join("user.log").strpath
         out, type_request = get_help()
         if type_request == "base":
             assert SERVICES_WRAPPED_HELP in out
@@ -809,7 +823,7 @@ class TestSetupLogging:
         assert "ERROR: after setup" in err
 
     @mock.patch("uaclient.cli.util.we_are_currently_root", return_value=False)
-    def test_file_log_not_configured_if_not_root(
+    def test_user_file_log_configured_if_not_root(
         self, m_we_are_currently_root, tmpdir, logging_sandbox
     ):
         log_file = tmpdir.join("log_file")
@@ -817,7 +831,7 @@ class TestSetupLogging:
         setup_logging(logging.INFO, logging.INFO, log_file=log_file.strpath)
         logging.info("after setup")
 
-        assert not log_file.exists()
+        assert log_file.exists()
 
     @pytest.mark.parametrize("log_filename", (None, "file.log"))
     @mock.patch("uaclient.cli.config")

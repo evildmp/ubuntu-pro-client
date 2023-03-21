@@ -1855,20 +1855,20 @@ def setup_logging(console_level, log_level, log_file=None, logger=None):
     console_handler.set_name("ua-console")  # Used to disable console logging
     logger.addHandler(console_handler)
 
-    # Setup file logging
-    if util.we_are_currently_root():
-        # Setup readable-by-root-only debug file logging if running as root
-        log_file_path = pathlib.Path(log_file)
+    log_file_path = pathlib.Path(log_file)
 
-        if not log_file_path.exists():
-            log_file_path.touch()
+    if not log_file_path.exists():
+        log_file_path.parent.mkdir(parents=True, exist_ok=True)
+        log_file_path.touch()
+        if util.we_are_currently_root():
             log_file_path.chmod(0o644)
+    # Setup file logging
 
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(JsonArrayFormatter())
-        file_handler.setLevel(log_level)
-        file_handler.set_name("ua-file")
-        logger.addHandler(file_handler)
+    file_handler = logging.FileHandler(log_file)
+    file_handler.setFormatter(JsonArrayFormatter())
+    file_handler.setLevel(log_level)
+    file_handler.set_name("ua-file")
+    logger.addHandler(file_handler)
 
 
 def set_event_mode(cmd_args):
@@ -1983,7 +1983,12 @@ def main(sys_argv=None):
 
     log_level = cfg.log_level
     console_level = logging.DEBUG if args.debug else logging.INFO
-    setup_logging(console_level, log_level, cfg.log_file)
+    log_file = (
+        cfg.log_file
+        if util.we_are_currently_root()
+        else pro_log.get_user_log_file()
+    )
+    setup_logging(console_level, log_level, log_file)
 
     logging.debug("Executed with sys.argv: %r" % sys_argv)
 

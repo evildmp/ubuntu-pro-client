@@ -204,12 +204,18 @@ class TestDisableLogToConsole:
 
     @pytest.mark.parametrize("disable_log", (True, False))
     def test_disable_log_to_console(
-        self, m_we_are_currently_root, logging_sandbox, capsys, disable_log
+        self,
+        m_we_are_currently_root,
+        logging_sandbox,
+        capsys,
+        tmpdir,
+        disable_log,
     ):
         # This test is parameterised so that we are sure that the context
         # manager is suppressing the output, not some other config change
 
-        cli.setup_logging(logging.INFO, logging.INFO)
+        log_file = tmpdir.join("file.log").strpath
+        cli.setup_logging(logging.INFO, logging.INFO, log_file=log_file)
 
         if disable_log:
             context_manager = util.disable_log_to_console

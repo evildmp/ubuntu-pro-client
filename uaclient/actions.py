@@ -10,8 +10,9 @@ from uaclient import (
     entitlements,
     exceptions,
     livepatch,
-    messages,
 )
+from uaclient import log as pro_log
+from uaclient import messages
 from uaclient import status as ua_status
 from uaclient import system, util
 from uaclient.clouds import AutoAttachCloudInstance  # noqa: F401
@@ -154,9 +155,15 @@ def _write_command_output_to_file(
 
 def _get_state_files(cfg: config.UAConfig):
     # include cfg log files here because they could be set to non default
+    user_log_files = (
+        pro_log.get_all_user_log_files()
+        if util.we_are_currently_root()
+        else [pro_log.get_user_log_file()]
+    )
     return [
         cfg.cfg_path or DEFAULT_CONFIG_FILE,
         cfg.log_file,
+        *user_log_files,
         cfg.timer_log_file,
         cfg.daemon_log_file,
         timer_jobs_state_file.ua_file.path,
@@ -225,6 +232,7 @@ def collect_logs(cfg: config.UAConfig, output_dir: str):
             if util.we_are_currently_root():
                 # if root, overwrite the original with redacted content
                 system.write_file(f, content)
+
             system.write_file(
                 os.path.join(output_dir, os.path.basename(f)), content
             )
