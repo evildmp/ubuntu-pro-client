@@ -70,3 +70,25 @@ Feature: Livepatch
         Examples: ubuntu release
             | release |
             | focal   |
+
+    @series.jammy
+    @uses.config.machine_type.lxd.vm
+    Scenario Outline: Livepatch is supported on interim HWE kernel
+        # This test is intended to ensure that an interim HWE kernel has the correct support status
+        # It should be kept up to date so that it runs on the latest LTS and installs the latest
+        # HWE kernel for that release.
+        Given a `<release>` machine with ubuntu-advantage-tools installed
+        When I run `apt-get update` with sudo
+        When I run `apt-get install linux-generic-hwe-<release_num> -y` with sudo
+        When I run `DEBIAN_FRONTEND=noninteractive apt-get remove linux-image*-kvm -y` with sudo
+        When I run `update-grub` with sudo
+        When I reboot the machine
+        When I attach `contract_token` with sudo
+        When I run `pro status` with sudo
+        Then stdout matches regexp:
+        """
+        livepatch +yes +enabled +Canonical Livepatch service
+        """
+        Examples: ubuntu release
+            | release | release_num |
+            | jammy   | 22.04       |
