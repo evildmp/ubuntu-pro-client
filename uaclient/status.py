@@ -81,6 +81,9 @@ STATUS_HEADER = "SERVICE          ENTITLED  STATUS    DESCRIPTION"
 # columns. Colorizing has an opening and closing set of unprintable characters
 # that factor into formats len() calculations
 STATUS_TMPL = "{name: <17}{entitled: <19}{status: <19}{description}"
+VARIANT_STATUS_TMPL = (
+    "{marker} {name: <15}{entitled: <19}{status: <19}{description}"
+)
 
 DEFAULT_STATUS = {
     "_doc": "Content provided in json response is currently considered"
@@ -125,12 +128,15 @@ def _get_blocked_by_services(ent):
     ]
 
 
-def _attached_service_status(ent, inapplicable_resources) -> Dict[str, Any]:
+def _attached_service_status(
+    ent, inapplicable_resources, cfg
+) -> Dict[str, Any]:
     warning = None
     status_details = ""
     description_override = ent.status_description_override()
     contract_status = ent.contract_status()
     available = "no" if ent.name in inapplicable_resources else "yes"
+    variants = {}
 
     if contract_status == ContractStatus.UNENTITLED:
         ent_status = UserFacingStatus.UNAVAILABLE
@@ -151,6 +157,16 @@ def _attached_service_status(ent, inapplicable_resources) -> Dict[str, Any]:
             if ent_status == UserFacingStatus.INAPPLICABLE:
                 available = "no"
 
+            if ent.variants:
+                variants = {
+                    variant_name: _attached_service_status(
+                        variant_cls(cfg=cfg),
+                        inapplicable_resources,
+                        cfg,
+                    )
+                    for variant_name, variant_cls in ent.variants.items()
+                }
+
     blocked_by = _get_blocked_by_services(ent)
 
     return {
@@ -163,6 +179,7 @@ def _attached_service_status(ent, inapplicable_resources) -> Dict[str, Any]:
         "available": available,
         "blocked_by": blocked_by,
         "warning": warning,
+        "variants": variants,
     }
 
 
@@ -224,7 +241,7 @@ def _attached_status(cfg: UAConfig) -> Dict[str, Any]:
             continue
         ent = ent_cls(cfg)
         response["services"].append(
-            _attached_service_status(ent, inapplicable_resources)
+            _attached_service_status(ent, inapplicable_resources, cfg)
         )
     response["services"].sort(key=lambda x: x.get("name", ""))
 
@@ -604,7 +621,7 @@ def format_expires(expires: Optional[datetime]) -> str:
     return expires.strftime("%c %Z")
 
 
-def format_tabular(status: Dict[str, Any]) -> str:
+def format_tabular(status: Dict[str, Any], show_all: bool = False) -> str:
     """Format status dict for tabular output."""
     if not status.get("attached"):
         if status.get("simulated"):
@@ -619,6 +636,7 @@ def format_tabular(status: Dict[str, Any]) -> str:
             ]
             for service in status["services"]:
                 content.append(STATUS_SIMULATED_TMPL.format(**service))
+
             return "\n".join(content)
 
         content = [
@@ -660,6 +678,7 @@ def format_tabular(status: Dict[str, Any]) -> str:
 
     service_warnings = []
     content = [STATUS_HEADER]
+    has_variants = False
     for service_status in status["services"]:
         entitled = service_status["entitled"]
         descr_override = service_status.get("description_override")
@@ -677,7 +696,28 @@ def format_tabular(status: Dict[str, Any]) -> str:
             warning_message = warning.get("message", None)
             if warning_message is not None:
                 service_warnings.append(warning_message)
+        variants = service_status.get("variants")
+        if variants and not show_all:
+            has_variants = True
+            fmt_args["name"] = "{}*".format(fmt_args["name"])
+
         content.append(STATUS_TMPL.format(**fmt_args))
+        if variants and show_all:
+            for idx, (_, variant) in enumerate(variants.items()):
+                marker = "├" if idx != len(variants) - 1 else "└"
+                content.append(
+                    VARIANT_STATUS_TMPL.format(
+                        marker=marker,
+                        name=variant.get("name"),
+                        entitled=colorize(variant.get("entitled", "")),
+                        status=colorize(variant.get("status", "")),
+                        description=variant.get("description", ""),
+                    )
+                )
+
+    if has_variants:
+        content.append("\n * " + messages.SERVICE_EXTRA_OPTIONS.msg)
+
     tech_support_level = status["contract"]["tech_support_level"]
 
     if status.get("notices") or len(service_warnings) > 0:
@@ -750,7 +790,7 @@ def help(cfg, name):
         )
 
     if cfg.is_attached:
-        service_status = _attached_service_status(help_ent, {})
+        service_status = _attached_service_status(help_ent, {}, cfg)
         status_msg = service_status["status"]
 
         response_dict["entitled"] = service_status["entitled"]

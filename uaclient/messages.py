@@ -1243,3 +1243,15 @@ LIVEPATCH_APPLICATION_STATUS_CLIENT_FAILURE = NamedMessage(
     "livepatch-client-failure",
     "canonical-livepatch status didn't finish successfully",
 )
+
+SERVICE_DISABLED_MISSING_PACKAGE = FormattedNamedMessage(
+    "service-disabled-missing-package",
+    """\
+The {service} service is not enable because the {package} package is
+not installed.""",
+)
+
+SERVICE_EXTRA_OPTIONS = NamedMessage(
+    "service-extra-options",
+    "This service has options, use pro status --all to see more details.",
+)

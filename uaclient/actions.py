@@ -99,7 +99,8 @@ def enable_entitlement_by_name(
     *,
     assume_yes: bool = False,
     allow_beta: bool = False,
-    access_only: bool = False
+    access_only: bool = False,
+    variant: str = ""
 ):
     """
     Constructs an entitlement based on the name provided. Passes kwargs onto
@@ -107,7 +108,9 @@ def enable_entitlement_by_name(
     :raise EntitlementNotFoundError: If no entitlement with the given name is
         found, then raises this error.
     """
-    ent_cls = entitlements.entitlement_factory(cfg=cfg, name=name)
+    ent_cls = entitlements.entitlement_factory(
+        cfg=cfg, name=name, variant=variant
+    )
     entitlement = ent_cls(
         cfg,
         assume_yes=assume_yes,
