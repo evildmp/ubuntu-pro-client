@@ -1003,6 +1003,11 @@ To get more information about the packages, run
     pro security-status --help
 for a list of available options."""
 
+SS_UPDATE_CALL = """\
+Make sure to run
+    sudo apt-get update
+to get the latest package information from apt."""
+
 SS_INTERIM_SUPPORT = "Main/Restricted packages receive updates until {date}."
 SS_LTS_SUPPORT = """\
 This machine is receiving security patching for Ubuntu Main/Restricted

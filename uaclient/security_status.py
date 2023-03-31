@@ -547,6 +547,8 @@ def security_status(cfg: UAConfig):
 
     print(messages.SS_HELP_CALL)
     print("")
+    print(messages.SS_UPDATE_CALL)
+    print("")
 
     if not is_lts:
         if is_supported(series):
