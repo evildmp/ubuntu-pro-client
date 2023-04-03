@@ -1255,3 +1255,8 @@ SERVICE_EXTRA_OPTIONS = NamedMessage(
     "service-extra-options",
     "This service has options, use pro status --all to see more details.",
 )
+
+INVALID_OPTION_COMBINATION = FormattedNamedMessage(
+    "invalid-option-combination",
+    "Error: Cannot use {option1} together with {option2}.",
+)
