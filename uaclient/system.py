@@ -163,7 +163,7 @@ def get_machine_id(cfg) -> str:
 
 @lru_cache(maxsize=None)
 def get_release_info() -> ReleaseInfo:
-    os_release = parse_os_release()
+    os_release = _parse_os_release()
     distribution = os_release.get("NAME", "UNKNOWN")
     pretty_version = re.sub(r"\.\d LTS", " LTS", os_release.get("VERSION", ""))
     series = os_release.get("VERSION_CODENAME", "")
@@ -254,7 +254,7 @@ def is_container(run_path: str = "/run") -> bool:
 
 
 @lru_cache(maxsize=None)
-def parse_os_release(release_file: Optional[str] = None) -> Dict[str, str]:
+def _parse_os_release(release_file: Optional[str] = None) -> Dict[str, str]:
     if not release_file:
         release_file = "/etc/os-release"
     data = {}
