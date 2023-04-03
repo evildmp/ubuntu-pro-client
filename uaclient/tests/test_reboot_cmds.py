@@ -10,6 +10,7 @@ from lib.reboot_cmds import (
     run_command,
 )
 from uaclient import messages
+from uaclient.entitlements.entitlement_status import ApplicationStatus
 from uaclient.exceptions import ProcessExecutionError
 from uaclient.files.notices import Notice
 
@@ -79,13 +80,19 @@ M_REPO_PATH = "uaclient.entitlements"
 
 class TestFixProPkgHolds:
     @pytest.mark.parametrize("caplog_text", [logging.WARN], indirect=True)
-    @pytest.mark.parametrize("fips_status", ("enabled", "disabled"))
+    @pytest.mark.parametrize(
+        "fips_status", (ApplicationStatus.ENABLED, ApplicationStatus.DISABLED)
+    )
     @mock.patch("sys.exit")
     @mock.patch(M_FIPS_PATH + "install_packages")
     @mock.patch(M_FIPS_PATH + "setup_apt_config")
     @mock.patch("uaclient.files.notices.NoticesManager.remove")
+    @mock.patch(
+        "uaclient.entitlements.fips.FIPSEntitlement.application_status"
+    )
     def test_calls_setup_apt_config_and_install_packages_when_enabled(
         self,
+        m_fips_status,
         m_remove_notice,
         setup_apt_config,
         install_packages,
@@ -94,13 +101,11 @@ class TestFixProPkgHolds:
         FakeConfig,
         caplog_text,
     ):
+        m_fips_status.return_value = (fips_status, None)
         cfg = FakeConfig()
-        fake_status_cache = {
-            "services": [{"name": "fips", "status": fips_status}]
-        }
-        cfg.write_cache("status-cache", fake_status_cache)
+
         fix_pro_pkg_holds(cfg=cfg)
-        if fips_status == "enabled":
+        if fips_status == ApplicationStatus.ENABLED:
             assert [mock.call()] == setup_apt_config.call_args_list
             assert [
                 mock.call(cleanup_on_failure=False)
