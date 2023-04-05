@@ -48,8 +48,7 @@ AVAILABLE_RESOURCES = [
     {"name": "ros"},
 ]
 
-ALL_SERVICES_WRAPPED_HELP = textwrap.dedent(
-    """
+SERVICES_WRAPPED_HELP = """\
 Client to manage Ubuntu Pro services on a machine.
  - cc-eal: Common Criteria EAL2 Provisioning Packages
    (https://ubuntu.com/cc-eal)
@@ -69,28 +68,8 @@ Client to manage Ubuntu Pro services on a machine.
    (https://ubuntu.com/robotics/ros-esm)
  - ros: Security Updates for the Robot Operating System
    (https://ubuntu.com/robotics/ros-esm)
-"""
-)
 
-SERVICES_WRAPPED_HELP = textwrap.dedent(
-    """
-Client to manage Ubuntu Pro services on a machine.
- - cc-eal: Common Criteria EAL2 Provisioning Packages
-   (https://ubuntu.com/cc-eal)
- - cis: Security compliance and audit tools
-   (https://ubuntu.com/security/certifications/docs/usg)
- - esm-apps: Expanded Security Maintenance for Applications
-   (https://ubuntu.com/security/esm)
- - esm-infra: Expanded Security Maintenance for Infrastructure
-   (https://ubuntu.com/security/esm)
- - fips-updates: NIST-certified core packages with priority security updates
-   (https://ubuntu.com/security/certifications#fips)
- - fips: NIST-certified core packages
-   (https://ubuntu.com/security/certifications#fips)
- - livepatch: Canonical Livepatch service
-   (https://ubuntu.com/security/livepatch)
-"""
-)
+Use pro help <service> to get more details about each service"""
 
 
 @pytest.fixture(params=["direct", "--help", "pro help", "pro help --all"])
@@ -179,10 +158,7 @@ class TestCLIParser:
         """Help output is sourced from entitlement name and description."""
         m_contract.get_available_resources.return_value = AVAILABLE_RESOURCES
         out, type_request = get_help()
-        if type_request == "base":
-            assert SERVICES_WRAPPED_HELP in out
-        else:
-            assert ALL_SERVICES_WRAPPED_HELP in out
+        assert SERVICES_WRAPPED_HELP in out
 
     @pytest.mark.parametrize(
         "out_format, expected_return",
