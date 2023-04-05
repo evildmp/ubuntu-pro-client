@@ -3,6 +3,7 @@ from typing import Dict, Optional, Tuple, Type  # noqa: F401
 from uaclient import apt, event_logger, messages, system, util
 from uaclient.entitlements import repo
 from uaclient.entitlements.base import IncompatibleService, UAEntitlement
+from uaclient.entitlements.entitlement_status import ApplicabilityStatus
 from uaclient.types import (  # noqa: F401
     MessagingOperations,
     MessagingOperationsDict,
@@ -197,3 +198,30 @@ class IntelIotgRealtime(RealtimeKernelEntitlement):
                 ),
             ),
         )
+
+    def applicability_status(
+        self,
+    ) -> Tuple[ApplicabilityStatus, Optional[messages.NamedMessage]]:
+        applicability_status, msg = super().applicability_status()
+        if applicability_status != ApplicabilityStatus.APPLICABLE:
+            return (applicability_status, msg)
+
+        affordances = self.entitlement_cfg["entitlement"].get(
+            "affordances", {}
+        )
+        affordances_vendor_names = affordances.get("vendor_names", None)
+        cpu_info = system.get_cpu_info()
+        if (
+            affordances_vendor_names is not None
+            and cpu_info.vendor_id not in affordances_vendor_names
+        ):
+            return (
+                ApplicabilityStatus.INAPPLICABLE,
+                messages.INAPPLICABLE_VENDOR_NAME.format(
+                    title=self.title,
+                    vendor=cpu_info.vendor_id,
+                    supported_vendors=", ".join(affordances_vendor_names),
+                ),
+            )
+
+        return ApplicabilityStatus.APPLICABLE, None
