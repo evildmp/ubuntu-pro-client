@@ -16,7 +16,7 @@ def entitlement(request, entitlement_factory):
     return entitlement_factory(request.param, suites=["xenial"])
 
 
-@mock.patch("uaclient.jobs.update_messaging.update_motd_messages")
+@mock.patch("uaclient.timer.update_messaging.update_motd_messages")
 @mock.patch(
     "uaclient.system.get_platform_info", return_value={"series": "xenial"}
 )

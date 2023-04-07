@@ -63,7 +63,7 @@ from uaclient.entitlements.entitlement_status import (
 )
 from uaclient.files import notices, state_files
 from uaclient.files.notices import Notice
-from uaclient.jobs.update_messaging import refresh_motd, update_motd_messages
+from uaclient.timer.update_messaging import refresh_motd, update_motd_messages
 from uaclient.log import JsonArrayFormatter
 from uaclient.yaml import safe_dump, safe_load
 
